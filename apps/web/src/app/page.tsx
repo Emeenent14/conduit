@@ -1,25 +1,31 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Header } from '@/components/landing/header';
+import { HeroSection } from '@/components/landing/hero-section';
+import { LogosSection } from '@/components/landing/logos-section';
+import { FeaturesSection } from '@/components/landing/features-section';
+import { HowItWorksSection } from '@/components/landing/how-it-works-section';
+import { CodePreview } from '@/components/landing/code-preview';
+import { IntegrationsPreview } from '@/components/landing/integrations-preview';
+import { TestimonialsSection } from '@/components/landing/testimonials-section';
+import { FAQSection } from '@/components/landing/faq-section';
+import { CTASection } from '@/components/landing/cta-section';
+import { Footer } from '@/components/landing/footer';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-5xl font-bold text-gray-900 mb-4">
-          Welcome to Conduit
-        </h1>
-        <p className="text-xl text-gray-600 mb-8">
-          One-click automation for everyone. No coding. No complexity. Just results.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Button asChild size="lg">
-            <Link href="/auth/register">Get Started</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/auth/login">Login</Link>
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main>
+        <HeroSection />
+        <LogosSection />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <CodePreview />
+        <IntegrationsPreview />
+        <TestimonialsSection />
+        <FAQSection />
+        <CTASection />
+      </main>
+      <Footer />
     </div>
   );
 }

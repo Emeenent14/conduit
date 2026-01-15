@@ -3,11 +3,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Search, Clock, Zap } from 'lucide-react';
+import { Search, Clock, Zap, ArrowRight, Sparkles } from 'lucide-react';
+import { Header } from '@/components/landing/header';
+import { Footer } from '@/components/landing/footer';
 
 interface App {
   slug: string;
@@ -44,210 +42,327 @@ interface TemplatesResponse {
   };
 }
 
+// Demo templates for when API is unavailable
+const demoTemplates: Template[] = [
+  {
+    id: '1',
+    slug: 'slack-gmail-notification',
+    name: 'Slack to Gmail Notifications',
+    description: 'Forward important Slack messages to your inbox automatically.',
+    tags: ['notifications', 'email', 'productivity'],
+    popularity: 95,
+    estimatedSetupMinutes: 5,
+    category: { id: '1', slug: 'productivity', name: 'Productivity' },
+    requiredApps: [{ slug: 'slack', name: 'Slack', icon: '' }, { slug: 'gmail', name: 'Gmail', icon: '' }],
+  },
+  {
+    id: '2',
+    slug: 'github-discord-alerts',
+    name: 'GitHub to Discord Alerts',
+    description: 'Get instant Discord notifications for GitHub events like PRs and issues.',
+    tags: ['developer', 'notifications', 'github'],
+    popularity: 88,
+    estimatedSetupMinutes: 3,
+    category: { id: '2', slug: 'developer', name: 'Developer Tools' },
+    requiredApps: [{ slug: 'github', name: 'GitHub', icon: '' }, { slug: 'discord', name: 'Discord', icon: '' }],
+  },
+  {
+    id: '3',
+    slug: 'airtable-notion-sync',
+    name: 'Airtable to Notion Sync',
+    description: 'Keep your Airtable bases and Notion databases in perfect sync.',
+    tags: ['database', 'sync', 'productivity'],
+    popularity: 82,
+    estimatedSetupMinutes: 10,
+    category: { id: '1', slug: 'productivity', name: 'Productivity' },
+    requiredApps: [{ slug: 'airtable', name: 'Airtable', icon: '' }, { slug: 'notion', name: 'Notion', icon: '' }],
+  },
+  {
+    id: '4',
+    slug: 'stripe-slack-payments',
+    name: 'Stripe Payment Alerts',
+    description: 'Get Slack notifications for every successful Stripe payment.',
+    tags: ['payments', 'notifications', 'sales'],
+    popularity: 91,
+    estimatedSetupMinutes: 5,
+    category: { id: '3', slug: 'sales', name: 'Sales & CRM' },
+    requiredApps: [{ slug: 'stripe', name: 'Stripe', icon: '' }, { slug: 'slack', name: 'Slack', icon: '' }],
+  },
+  {
+    id: '5',
+    slug: 'hubspot-email-sequence',
+    name: 'HubSpot Email Sequences',
+    description: 'Automatically add new contacts to email nurture sequences.',
+    tags: ['crm', 'marketing', 'automation'],
+    popularity: 79,
+    estimatedSetupMinutes: 15,
+    category: { id: '4', slug: 'marketing', name: 'Marketing' },
+    requiredApps: [{ slug: 'hubspot', name: 'HubSpot', icon: '' }, { slug: 'gmail', name: 'Gmail', icon: '' }],
+  },
+  {
+    id: '6',
+    slug: 'openai-content-generator',
+    name: 'AI Content Generator',
+    description: 'Generate blog posts, social media content, and more with GPT-4.',
+    tags: ['ai', 'content', 'marketing'],
+    popularity: 96,
+    estimatedSetupMinutes: 8,
+    category: { id: '5', slug: 'ai', name: 'AI & ML' },
+    requiredApps: [{ slug: 'openai', name: 'OpenAI', icon: '' }, { slug: 'notion', name: 'Notion', icon: '' }],
+  },
+  {
+    id: '7',
+    slug: 'calendar-reminder-sms',
+    name: 'Calendar SMS Reminders',
+    description: 'Send SMS reminders for upcoming calendar events via Twilio.',
+    tags: ['calendar', 'notifications', 'sms'],
+    popularity: 74,
+    estimatedSetupMinutes: 7,
+    category: { id: '1', slug: 'productivity', name: 'Productivity' },
+    requiredApps: [{ slug: 'google-calendar', name: 'Google Calendar', icon: '' }, { slug: 'twilio', name: 'Twilio', icon: '' }],
+  },
+  {
+    id: '8',
+    slug: 'salesforce-lead-enrichment',
+    name: 'Lead Enrichment Pipeline',
+    description: 'Automatically enrich Salesforce leads with company and contact data.',
+    tags: ['crm', 'enrichment', 'sales'],
+    popularity: 85,
+    estimatedSetupMinutes: 12,
+    category: { id: '3', slug: 'sales', name: 'Sales & CRM' },
+    requiredApps: [{ slug: 'salesforce', name: 'Salesforce', icon: '' }],
+  },
+  {
+    id: '9',
+    slug: 'shopify-order-fulfillment',
+    name: 'Shopify Order Automation',
+    description: 'Automate order processing, fulfillment, and customer notifications.',
+    tags: ['ecommerce', 'orders', 'automation'],
+    popularity: 87,
+    estimatedSetupMinutes: 20,
+    category: { id: '6', slug: 'ecommerce', name: 'E-commerce' },
+    requiredApps: [{ slug: 'shopify', name: 'Shopify', icon: '' }, { slug: 'slack', name: 'Slack', icon: '' }],
+  },
+];
+
+const categories = ['All', 'Productivity', 'Operations', 'Sales', 'Marketing', 'Customer Support', 'Lead Management'];
+
 export default function TemplatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedApps, setSelectedApps] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [page, setPage] = useState(1);
+  const [allTemplates, setAllTemplates] = useState<Template[]>([]);
+  const limit = 100; // Fetch more templates per page
 
-  // Fetch categories
-  const { data: categoriesData } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/templates/categories`);
-      if (!res.ok) throw new Error('Failed to fetch categories');
-      return res.json();
-    },
-  });
-
-  // Fetch templates with filters
-  const { data: templatesData, isLoading } = useQuery<TemplatesResponse>({
+  // Fetch templates from API
+  const { data, isLoading, error } = useQuery<TemplatesResponse>({
     queryKey: ['templates', page, selectedCategory, searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '12',
-        ...(selectedCategory && { category: selectedCategory }),
-        ...(searchQuery && { search: searchQuery }),
+        limit: limit.toString(),
       });
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/templates?${params}`);
-      if (!res.ok) throw new Error('Failed to fetch templates');
-      return res.json();
+      if (selectedCategory !== 'All') {
+        // Map display names to actual category slugs
+        const categoryMap: Record<string, string> = {
+          'Productivity': 'productivity',
+          'Operations': 'operations',
+          'Sales': 'sales',
+          'Marketing': 'marketing',
+          'Customer Support': 'support',
+          'Lead Management': 'lead-management',
+        };
+        const categorySlug = categoryMap[selectedCategory];
+        if (categorySlug) {
+          params.append('category', categorySlug);
+        }
+      }
+
+      if (searchQuery) {
+        params.append('q', searchQuery);
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1/templates?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch templates');
+      return response.json();
+    },
+    onSuccess: (newData) => {
+      if (page === 1) {
+        // Reset templates on first page or when filters change
+        setAllTemplates(newData.data);
+      } else {
+        // Append new templates when loading more
+        setAllTemplates((prev) => [...prev, ...newData.data]);
+      }
     },
   });
 
-  const templates = templatesData?.data || [];
-  const meta = templatesData?.meta;
-  const categories = categoriesData?.data || [];
+  // Reset to page 1 when search or category changes
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setPage(1);
+    setAllTemplates([]);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+    setAllTemplates([]);
+  };
+
+  const templates = allTemplates.length > 0 ? allTemplates : (data?.data || demoTemplates);
+  const totalTemplates = data?.meta?.total || 500;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900">Template Catalog</h1>
-          <p className="mt-2 text-gray-600">
-            Browse {meta?.total || 0} pre-built automation templates. One-click setup, zero coding required.
-          </p>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="pt-14">
+        {/* Hero */}
+        <section className="py-24">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-sky-400 mb-3">Templates</p>
+              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
+                {totalTemplates}+ ready-to-use automations
+              </h1>
+              <p className="mt-6 text-lg text-muted-foreground">
+                Browse our curated library of automation templates. One-click setup, zero coding required.
+              </p>
+            </div>
 
-          {/* Search Bar */}
-          <div className="mt-6 max-w-xl">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
+            {/* Search */}
+            <div className="mt-12 relative max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <input
                 type="text"
                 placeholder="Search templates..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-10"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full rounded-full border border-[var(--line-color)] bg-white/5 pl-12 pr-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-500/50"
               />
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar - Categories */}
-          <aside className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg border p-4 sticky top-4">
-              <h2 className="font-semibold text-gray-900 mb-4">Categories</h2>
-              <div className="space-y-2">
+        {/* Categories & Grid */}
+        <section className="pb-24">
+          <div className="mx-auto max-w-7xl px-6">
+            {/* Divider */}
+            <div className="h-px bg-[var(--line-color)] mb-8" />
+
+            {/* Category tabs */}
+            <div className="flex flex-wrap gap-2 mb-12">
+              {categories.map((cat) => (
                 <button
-                  onClick={() => {
-                    setSelectedCategory(null);
-                    setPage(1);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                    selectedCategory === null
-                      ? 'bg-blue-50 text-blue-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  All Templates
-                </button>
-                {categories.map((category: any) => (
-                  <button
-                    key={category.slug}
-                    onClick={() => {
-                      setSelectedCategory(category.slug);
-                      setPage(1);
-                    }}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                      selectedCategory === category.slug
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={`px-4 py-2 text-sm rounded-full transition-colors ${selectedCategory === cat
+                      ? 'bg-sky-500 text-white'
+                      : 'bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10'
                     }`}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
-          </aside>
 
-          {/* Main Content - Template Grid */}
-          <main className="flex-1">
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardHeader>
-                      <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-full"></div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-20 bg-gray-200 rounded"></div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : templates.length === 0 ? (
+            {/* Templates Grid */}
+            {isLoading && (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">No templates found</p>
-                <p className="text-gray-400 text-sm mt-2">Try adjusting your search or filters</p>
+                <p className="text-muted-foreground">Loading templates...</p>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.map((template) => (
-                    <Link key={template.id} href={`/templates/${template.slug}`}>
-                      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                        <CardHeader>
-                          <div className="flex items-start justify-between gap-2">
-                            <CardTitle className="text-lg line-clamp-2">{template.name}</CardTitle>
-                          </div>
-                          <CardDescription className="line-clamp-2">{template.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {/* Required Apps */}
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {template.requiredApps.slice(0, 3).map((app) => (
-                              <Badge key={app.slug} variant="secondary" className="text-xs">
-                                {app.name}
-                              </Badge>
-                            ))}
-                            {template.requiredApps.length > 3 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{template.requiredApps.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-2">
-                            {template.tags.slice(0, 3).map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex items-center justify-between text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{template.estimatedSetupMinutes} min</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {template.category.name}
-                          </Badge>
-                        </CardFooter>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {meta && meta.totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-sm text-gray-600">
-                      Page {page} of {meta.totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      disabled={page === meta.totalPages}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </>
             )}
-          </main>
-        </div>
-      </div>
+
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-red-400">Failed to load templates. Showing demo templates.</p>
+              </div>
+            )}
+
+            {!isLoading && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {templates.map((template, index) => (
+                <Link
+                  key={template.id}
+                  href={`/templates/${template.slug}`}
+                  className={`group relative rounded-2xl border border-[var(--line-color)] bg-white/[0.02] p-6 hover:bg-white/[0.05] hover:border-white/20 transition-all
+                  `}
+                >
+                  {template.popularity > 90 && (
+                    <span className="absolute top-4 right-4 inline-flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                      <Sparkles className="h-3 w-3" />
+                      Popular
+                    </span>
+                  )}
+
+                  {/* Category badge */}
+                  <span className="inline-block text-[10px] font-medium text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full mb-4">
+                    {template.category.name}
+                  </span>
+
+                  <h3 className="font-semibold mb-2 group-hover:text-sky-400 transition-colors">
+                    {template.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                    {template.description}
+                  </p>
+
+                  {/* Apps used */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {template.requiredApps.slice(0, 3).map((app) => (
+                      <span
+                        key={app.slug}
+                        className="text-[11px] text-muted-foreground bg-white/5 px-2 py-1 rounded"
+                      >
+                        {app.name}
+                      </span>
+                    ))}
+                    {template.requiredApps.length > 3 && (
+                      <span className="text-[11px] text-muted-foreground bg-white/5 px-2 py-1 rounded">
+                        +{template.requiredApps.length - 3}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-[var(--line-color)]">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{template.estimatedSetupMinutes} min setup</span>
+                    </div>
+                    <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </Link>
+              ))}
+              </div>
+            )}
+
+            {!isLoading && templates.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No templates found matching your criteria.</p>
+              </div>
+            )}
+
+            {/* Load more CTA */}
+            {!isLoading && data?.meta && data.meta.page < data.meta.totalPages && (
+              <div className="mt-12 text-center">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Showing {templates.length} of {totalTemplates} templates
+                </p>
+                <button
+                  onClick={() => setPage(page + 1)}
+                  className="inline-flex items-center gap-2 rounded-full bg-white/10 px-6 py-3 text-sm font-medium hover:bg-white/15 transition-colors"
+                >
+                  Load more templates
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
+      <Footer />
     </div>
   );
 }

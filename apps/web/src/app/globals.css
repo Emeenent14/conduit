@@ -10,7 +10,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 199 89% 48%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,30 +22,34 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 199 89% 48%;
     --radius: 0.5rem;
+    --line-color: rgba(0, 0, 0, 0.08);
+    --dot-color: rgba(0, 0, 0, 0.12);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 0 0% 0%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222 47% 6%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 47% 6%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 217.2 32.6% 12%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 217.2 32.6% 12%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 217.2 32.6% 12%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 217.2 32.6% 15%;
+    --input: 217.2 32.6% 15%;
+    --ring: 199 89% 48%;
+    --line-color: rgba(255, 255, 255, 0.1);
+    --dot-color: rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -53,7 +57,80 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Dot pattern for hero texture - MORE VISIBLE */
+  .bg-dots {
+    background-image: radial-gradient(var(--dot-color) 1.5px, transparent 1.5px);
+    background-size: 20px 20px;
+  }
+
+  /* Combined grid + dots for hero - MORE VISIBLE */
+  .bg-hero-texture {
+    background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* Section divider - horizontal line */
+  .section-divider {
+    border-top: 1px solid var(--line-color);
+  }
+
+  /* Visible border lines */
+  .border-line {
+    border-color: var(--line-color);
+  }
+
+  /* Glow effects */
+  .glow-sky {
+    box-shadow: 0 0 80px 40px rgba(14, 165, 233, 0.15);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 80px 40px rgba(139, 92, 246, 0.15);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-cyan-300 to-sky-400;
+  }
+
+  /* Mask gradient fade */
+  .mask-radial {
+    mask-image: radial-gradient(ellipse 80% 50% at 50% 50%, black 40%, transparent 100%);
+  }
+
+  /* Mask fade to edges */
+  .mask-fade-edges {
+    mask-image: radial-gradient(ellipse 100% 80% at 50% 50%, black 30%, transparent 80%);
+  }
+
+  /* Inset ring button style */
+  .inset-ring {
+    box-shadow: inset 0 0 0 1px var(--line-color);
+  }
+}
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode color scheme */
+html.dark {
+  color-scheme: dark;
 }

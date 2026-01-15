@@ -17,6 +17,7 @@ const TEMPLATES_DIR = path.join(__dirname, '..', 'templates');
 
 // Apps to ensure exist in database (from import summary)
 const REQUIRED_APPS = [
+  // Existing apps
   { slug: 'google-drive', name: 'Google Drive', authType: 'oauth2', n8nType: 'googleDriveOAuth2Api' },
   { slug: 'gmail', name: 'Gmail', authType: 'oauth2', n8nType: 'gmailOAuth2' },
   { slug: 'airtable', name: 'Airtable', authType: 'api_key', n8nType: 'airtableTokenApi' },
@@ -34,6 +35,20 @@ const REQUIRED_APPS = [
   { slug: 'hubspot', name: 'HubSpot', authType: 'oauth2', n8nType: 'hubspotOAuth2Api' },
   { slug: 'mailchimp', name: 'Mailchimp', authType: 'oauth2', n8nType: 'mailchimpOAuth2Api' },
   { slug: 'stripe', name: 'Stripe', authType: 'api_key', n8nType: 'stripeApi' },
+  // AI/ML integrations
+  { slug: 'anthropic', name: 'Anthropic', authType: 'api_key', n8nType: 'anthropicApi' },
+  { slug: 'cohere', name: 'Cohere', authType: 'api_key', n8nType: 'cohereApi' },
+  { slug: 'huggingface', name: 'Hugging Face', authType: 'api_key', n8nType: 'huggingFaceApi' },
+  // Vector databases
+  { slug: 'pinecone', name: 'Pinecone', authType: 'api_key', n8nType: 'pineconeApi' },
+  { slug: 'weaviate', name: 'Weaviate', authType: 'api_key', n8nType: 'weaviateApi' },
+  { slug: 'qdrant', name: 'Qdrant', authType: 'api_key', n8nType: 'qdrantApi' },
+  // Databases
+  { slug: 'redis', name: 'Redis', authType: 'api_key', n8nType: 'redisApi' },
+  { slug: 'supabase', name: 'Supabase', authType: 'api_key', n8nType: 'supabaseApi' },
+  { slug: 'postgres', name: 'PostgreSQL', authType: 'api_key', n8nType: 'postgresDb' },
+  { slug: 'mysql', name: 'MySQL', authType: 'api_key', n8nType: 'mysqlDb' },
+  { slug: 'mongodb', name: 'MongoDB', authType: 'api_key', n8nType: 'mongoDb' },
 ];
 
 interface ConvertedTemplate {

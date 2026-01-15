@@ -14,7 +14,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Paths
-const TEMPLATES_SOURCE = 'C:\\Users\\User\\Documents\\awesome-n8n-templates';
+const TEMPLATES_SOURCE = 'C:\\Users\\User\\Documents\\conduit\\n8n-free-templates';
 const TEMPLATES_OUTPUT = path.join(__dirname, '..', 'templates');
 const README_PATH = path.join(TEMPLATES_SOURCE, 'README.md');
 
@@ -44,28 +44,57 @@ const NODE_TYPE_TO_APP: Record<string, string> = {
   'instagram': 'instagram',
   'twitter': 'twitter',
   'wordpress': 'wordpress',
+  // AI/ML integrations
+  'anthropic': 'anthropic',
+  'cohere': 'cohere',
+  'huggingFace': 'huggingface',
+  // Vector databases
+  'pinecone': 'pinecone',
+  'weaviate': 'weaviate',
+  'qdrant': 'qdrant',
+  // Databases
+  'redis': 'redis',
+  'supabase': 'supabase',
+  'postgres': 'postgres',
+  'mysql': 'mysql',
+  'mongodb': 'mongodb',
 };
 
 // Folder to Conduit category mapping
 const FOLDER_TO_CATEGORY: Record<string, string> = {
-  'Gmail_and_Email_Automation': 'marketing',
-  'Telegram': 'support',
-  'Google_Drive_and_Google_Sheets': 'operations',
-  'Slack': 'support',
-  'Discord': 'support',
-  'WhatsApp': 'support',
-  'Instagram_Twitter_Social_Media': 'marketing',
-  'WordPress': 'marketing',
-  'Notion': 'operations',
-  'Airtable': 'operations',
-  'Forms_and_Surveys': 'lead-management',
-  'HR_and_Recruitment': 'operations',
-  'AI_Research_RAG_and_Data_Analysis': 'operations',
-  'OpenAI_and_LLMs': 'operations',
-  'PDF_and_Document_Processing': 'operations',
-  'Database_and_Storage': 'operations',
-  'Other_Integrations_and_Use_Cases': 'operations',
-  'devops': 'operations',
+  // Technology & Development
+  'AI_ML': 'operations',
+  'DevOps': 'operations',
+  'Data_Analytics': 'operations',
+  'IoT': 'operations',
+
+  // Business Functions
+  'E_Commerce_Retail': 'sales',
+  'Finance_Accounting': 'operations',
+  'HR': 'operations',
+  'Legal_Tech': 'operations',
+  'Real_Estate': 'sales',
+
+  // Communication & Marketing
+  'Email_Automation': 'marketing',
+  'Social_Media': 'marketing',
+  'Creative_Content': 'marketing',
+  'Media': 'marketing',
+
+  // Industry-Specific
+  'Agriculture': 'operations',
+  'Automotive': 'operations',
+  'Education': 'operations',
+  'Energy': 'operations',
+  'Gaming': 'operations',
+  'Government_NGO': 'operations',
+  'Healthcare': 'operations',
+  'Manufacturing': 'operations',
+  'Travel': 'operations',
+
+  // General
+  'Productivity': 'productivity',
+  'Misc': 'operations',
 };
 
 // Department to Conduit category mapping (from README)
@@ -211,7 +240,11 @@ function generateTags(name: string, description: string, folder: string): string
     'ai', 'automation', 'email', 'slack', 'telegram', 'notion',
     'sheets', 'drive', 'gmail', 'chatbot', 'webhook', 'api',
     'notification', 'analytics', 'crm', 'leads', 'sales',
-    'marketing', 'support', 'monitoring', 'reporting'
+    'marketing', 'support', 'monitoring', 'reporting',
+    // AI/ML keywords
+    'vector', 'rag', 'embeddings', 'llm', 'ml', 'data',
+    'iot', 'finance', 'healthcare', 'ecommerce', 'devops',
+    'database', 'cloud', 'security', 'testing'
   ];
 
   for (const keyword of keywords) {

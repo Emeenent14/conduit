@@ -1,0 +1,331 @@
+{
+  "info": {
+    "name": "Conduit API - Phase 3 (Credential Management)",
+    "description": "Complete API collection for testing Phase 3 credential management features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "credential_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\",\n  \"name\": \"Test User\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', response.data.accessToken);",
+                  "    console.log('Access token saved:', response.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!@#\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OAuth Flows",
+      "item": [
+        {
+          "name": "Google OAuth - Start Flow",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oauth/google/authorize?returnUrl=http://localhost:3000/credentials",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "oauth", "google", "authorize"],
+              "query": [
+                {
+                  "key": "returnUrl",
+                  "value": "http://localhost:3000/credentials",
+                  "description": "URL to redirect after OAuth success"
+                }
+              ]
+            },
+            "description": "Opens Google OAuth consent screen. Copy the URL and open in browser while authenticated."
+          }
+        },
+        {
+          "name": "Slack OAuth - Start Flow",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/oauth/slack/authorize?returnUrl=http://localhost:3000/credentials",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "oauth", "slack", "authorize"],
+              "query": [
+                {
+                  "key": "returnUrl",
+                  "value": "http://localhost:3000/credentials"
+                }
+              ]
+            },
+            "description": "Opens Slack OAuth consent screen. Copy the URL and open in browser while authenticated."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credentials",
+      "item": [
+        {
+          "name": "List All Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('credential_id', response.data[0].id);",
+                  "        console.log('Credential ID saved:', response.data[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/credentials",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "credentials"]
+            },
+            "description": "Get all credentials for the authenticated user"
+          }
+        },
+        {
+          "name": "Get Single Credential",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/credentials/{{credential_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "credentials", "{{credential_id}}"]
+            },
+            "description": "Get details of a specific credential"
+          }
+        },
+        {
+          "name": "Create OpenAI API Key Credential",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('credential_id', response.data.id);",
+                  "    console.log('Created credential ID:', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appSlug\": \"openai\",\n  \"apiKey\": \"sk-test1234567890abcdefghijklmnopqrstuvwxyz\",\n  \"name\": \"My OpenAI Key\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/credentials",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "credentials"]
+            },
+            "description": "Create a new API key credential (example with OpenAI)"
+          }
+        },
+        {
+          "name": "Test Credential",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/credentials/{{credential_id}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "credentials", "{{credential_id}}", "test"]
+            },
+            "description": "Test if a credential is valid by making a test API call"
+          }
+        },
+        {
+          "name": "Delete Credential",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/credentials/{{credential_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "credentials", "{{credential_id}}"]
+            },
+            "description": "Delete a credential (also removes from n8n)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "List Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/templates?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "templates"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "category",
+                  "value": "productivity",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "email",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Template by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/templates/slack-gmail-notification",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "templates", "slack-gmail-notification"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

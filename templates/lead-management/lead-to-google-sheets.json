@@ -1,0 +1,116 @@
+{
+  "$schema": "../template.schema.json",
+  "metadata": {
+    "slug": "lead-to-google-sheets",
+    "name": "New Lead → Google Sheets",
+    "description": "Automatically log new leads to a Google Sheet for easy tracking and analysis",
+    "longDescription": "## How This Works\n\nThis automation captures new form submissions and adds them as rows in your Google Sheet, creating a simple but powerful lead tracking system.\n\n### Benefits\n\n- **Automatic logging**: Never manually copy leads again\n- **Central database**: All leads in one spreadsheet\n- **Easy sharing**: Share the sheet with your team\n- **Analysis ready**: Use Google Sheets formulas and charts\n\n### What Gets Logged\n\n- Submission timestamp\n- Name and email\n- All form responses\n- Source tracking\n\n### Perfect For\n\n- Small businesses tracking leads\n- Agencies managing multiple clients\n- Anyone who loves spreadsheets",
+    "category": "lead-management",
+    "tags": ["leads", "spreadsheet", "tracking", "google-sheets"],
+    "estimatedSetupMinutes": 5,
+    "author": "Conduit",
+    "version": "1.0.0"
+  },
+  "requirements": {
+    "apps": [
+      {
+        "slug": "typeform",
+        "role": "trigger",
+        "description": "Triggers when someone submits your form"
+      },
+      {
+        "slug": "google-sheets",
+        "role": "action",
+        "description": "Adds a new row for each submission"
+      }
+    ]
+  },
+  "configuration": {
+    "fields": [
+      {
+        "id": "spreadsheet_id",
+        "type": "text",
+        "label": "Google Sheet ID",
+        "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+        "required": true,
+        "helpText": "Found in your Google Sheet URL: docs.google.com/spreadsheets/d/{THIS_PART}/edit"
+      },
+      {
+        "id": "sheet_name",
+        "type": "text",
+        "label": "Sheet Tab Name",
+        "placeholder": "Leads",
+        "default": "Sheet1",
+        "required": true,
+        "helpText": "The name of the tab where leads should be added"
+      },
+      {
+        "id": "include_timestamp",
+        "type": "boolean",
+        "label": "Add timestamp column",
+        "default": true,
+        "helpText": "Adds submission date/time as the first column"
+      }
+    ]
+  },
+  "n8nWorkflow": {
+    "name": "{{WORKFLOW_NAME}}",
+    "nodes": [
+      {
+        "parameters": {},
+        "id": "typeform-trigger",
+        "name": "Typeform Trigger",
+        "type": "n8n-nodes-base.typeformTrigger",
+        "typeVersion": 1,
+        "position": [250, 300],
+        "webhookId": "{{WORKFLOW_ID}}-typeform",
+        "credentials": {
+          "typeformApi": "{{CREDENTIAL:typeform}}"
+        }
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "{{CONFIG:spreadsheet_id}}",
+            "mode": "id"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "{{CONFIG:sheet_name}}",
+            "mode": "name"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {}
+          },
+          "options": {}
+        },
+        "id": "google-sheets",
+        "name": "Google Sheets",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.2,
+        "position": [500, 300],
+        "credentials": {
+          "googleSheetsOAuth2Api": "{{CREDENTIAL:google-sheets}}"
+        }
+      }
+    ],
+    "connections": {
+      "Typeform Trigger": {
+        "main": [
+          [
+            {
+              "node": "Google Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    }
+  }
+}

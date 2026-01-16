@@ -1,0 +1,190 @@
+{
+  "$schema": "../template.schema.json",
+  "metadata": {
+    "slug": "deal-won-celebration",
+    "name": "Deal Won → Team Celebration",
+    "description": "Celebrate closed deals with automatic Slack announcements to boost team morale",
+    "longDescription": "## How This Works\n\nWhen a deal is marked as 'Won' in HubSpot, this automation immediately sends a celebratory message to your team Slack channel.\n\n### Why This Matters\n\n- **Instant recognition**: Sales reps get immediate kudos\n- **Team awareness**: Everyone knows about wins\n- **Morale boost**: Celebrate success together\n- **Transparency**: Track wins without meetings\n\n### The Celebration Message Includes\n\n- 🎉 Celebratory emoji\n- Deal name and value\n- Sales rep who closed it\n- Company name\n\n### Perfect For\n\n- Sales teams of any size\n- Remote teams wanting connection\n- Companies with competitive sales cultures",
+    "category": "sales",
+    "tags": ["sales", "celebration", "hubspot", "slack", "team"],
+    "estimatedSetupMinutes": 5,
+    "author": "Conduit",
+    "version": "1.0.0"
+  },
+  "requirements": {
+    "apps": [
+      {
+        "slug": "hubspot",
+        "role": "trigger",
+        "description": "Monitors for deals moving to 'Closed Won'"
+      },
+      {
+        "slug": "slack",
+        "role": "action",
+        "description": "Posts celebration message to your channel"
+      }
+    ]
+  },
+  "configuration": {
+    "fields": [
+      {
+        "id": "slack_channel",
+        "type": "text",
+        "label": "Celebration Channel",
+        "placeholder": "#sales-wins",
+        "required": true,
+        "helpText": "The Slack channel where wins will be announced"
+      },
+      {
+        "id": "min_deal_value",
+        "type": "number",
+        "label": "Minimum Deal Value ($)",
+        "default": 0,
+        "min": 0,
+        "required": false,
+        "helpText": "Only celebrate deals above this value (0 = all deals)"
+      },
+      {
+        "id": "celebration_emoji",
+        "type": "select",
+        "label": "Celebration Style",
+        "default": "🎉",
+        "options": [
+          { "value": "🎉", "label": "🎉 Party" },
+          { "value": "💰", "label": "💰 Money" },
+          { "value": "🏆", "label": "🏆 Trophy" },
+          { "value": "🚀", "label": "🚀 Rocket" },
+          { "value": "⭐", "label": "⭐ Star" }
+        ]
+      },
+      {
+        "id": "include_value",
+        "type": "boolean",
+        "label": "Show deal value",
+        "default": true,
+        "helpText": "Include the deal amount in the message"
+      }
+    ]
+  },
+  "n8nWorkflow": {
+    "name": "{{WORKFLOW_NAME}}",
+    "nodes": [
+      {
+        "parameters": {
+          "eventsUi": {
+            "eventValues": [
+              {
+                "name": "deal.propertyChange",
+                "value": "deal.propertyChange"
+              }
+            ]
+          },
+          "additionalFields": {
+            "propertyName": "dealstage"
+          }
+        },
+        "id": "hubspot-trigger",
+        "name": "HubSpot Trigger",
+        "type": "n8n-nodes-base.hubspotTrigger",
+        "typeVersion": 1,
+        "position": [250, 300],
+        "webhookId": "{{WORKFLOW_ID}}-hubspot",
+        "credentials": {
+          "hubspotOAuth2Api": "{{CREDENTIAL:hubspot}}"
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "string": [
+              {
+                "value1": "={{$json.properties.dealstage}}",
+                "value2": "closedwon"
+              }
+            ]
+          }
+        },
+        "id": "if-won",
+        "name": "If Won",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [450, 300]
+      },
+      {
+        "parameters": {
+          "channel": "{{CONFIG:slack_channel}}",
+          "text": "={{\"{{CONFIG:celebration_emoji}} *DEAL WON!* {{CONFIG:celebration_emoji}}\\n\\n\"}}",
+          "attachments": [],
+          "blocksUi": {
+            "blocksValues": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "={{\"{{CONFIG:celebration_emoji}} *DEAL WON!* {{CONFIG:celebration_emoji}}\"}}"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "=\"*Deal:*\\n\" + $json.properties.dealname"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "=\"*Value:*\\n$\" + $json.properties.amount"
+                  }
+                ]
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "=\"Closed by the amazing sales team • \" + $now.format('MMM D, YYYY')"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "slack-celebration",
+        "name": "Slack Celebration",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.1,
+        "position": [650, 200],
+        "credentials": {
+          "slackOAuth2Api": "{{CREDENTIAL:slack}}"
+        }
+      }
+    ],
+    "connections": {
+      "HubSpot Trigger": {
+        "main": [
+          [
+            {
+              "node": "If Won",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If Won": {
+        "main": [
+          [
+            {
+              "node": "Slack Celebration",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    }
+  }
+}

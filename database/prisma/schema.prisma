@@ -1,0 +1,376 @@
+// Conduit Prisma Schema
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum AuthType {
+  oauth2
+  api_key
+}
+
+enum WorkflowStatus {
+  active
+  inactive
+  error
+  pending
+}
+
+enum ExecutionStatus {
+  running
+  success
+  error
+  waiting
+  cancelled
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?   @map("password_hash")
+  name          String
+  avatarUrl     String?   @map("avatar_url")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  googleId      String?   @unique @map("google_id")
+
+  // Settings
+  notificationEmail Boolean @default(true) @map("notification_email")
+  notificationSlack Boolean @default(false) @map("notification_slack")
+  timezone          String  @default("UTC")
+
+  // Timestamps
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  refreshTokens RefreshToken[]
+  credentials   Credential[]
+  workflows     UserWorkflow[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revoked   Boolean   @default(false)
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Device tracking
+  userAgent String? @map("user_agent")
+  ipAddress String? @map("ip_address")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// TEMPLATES & CATALOG
+// ============================================
+
+model Category {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String?
+  icon        String?
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  templates Template[]
+
+  @@index([slug])
+  @@map("categories")
+}
+
+model App {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String?
+  iconUrl     String?  @map("icon_url")
+  authType    AuthType @map("auth_type")
+
+  // OAuth configuration
+  oauthScopes   String[] @map("oauth_scopes")
+  oauthAuthUrl  String?  @map("oauth_auth_url")
+  oauthTokenUrl String?  @map("oauth_token_url")
+
+  // API key configuration
+  apiKeyInstructions String? @map("api_key_instructions")
+  apiKeyUrl          String? @map("api_key_url")
+
+  // n8n mapping
+  n8nCredentialType String? @map("n8n_credential_type")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  credentials Credential[]
+
+  @@index([slug])
+  @@map("apps")
+}
+
+model Template {
+  id              String  @id @default(uuid())
+  slug            String  @unique
+  name            String
+  description     String
+  longDescription String? @map("long_description")
+
+  // Classification
+  categoryId String   @map("category_id")
+  tags       String[] @default([])
+
+  // Template configuration
+  requiredAppIds String[] @map("required_app_ids") // Array of app IDs
+  configFields   Json     @default("[]") @map("config_fields")
+
+  // n8n workflow
+  n8nWorkflow Json @map("n8n_workflow")
+
+  // Metadata
+  estimatedSetupMinutes Int     @default(5) @map("estimated_setup_minutes")
+  popularity            Int     @default(0)
+  isFeatured            Boolean @default(false) @map("is_featured")
+  isActive              Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  category  Category       @relation(fields: [categoryId], references: [id])
+  workflows UserWorkflow[]
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([popularity(sort: Desc)])
+  @@map("templates")
+}
+
+// ============================================
+// CREDENTIALS
+// ============================================
+
+model Credential {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  appId  String @map("app_id")
+
+  // Encrypted credential data
+  credentialsEncrypted Bytes  @map("credentials_encrypted")
+  encryptionIv         Bytes  @map("encryption_iv")
+  authTag              Bytes  @map("auth_tag")
+
+  // OAuth-specific fields
+  oauthAccessTokenEncrypted  Bytes?    @map("oauth_access_token_encrypted")
+  oauthRefreshTokenEncrypted Bytes?    @map("oauth_refresh_token_encrypted")
+  oauthExpiresAt             DateTime? @map("oauth_expires_at")
+  oauthScopes                String[]  @map("oauth_scopes")
+
+  // Status
+  isValid          Boolean   @default(true) @map("is_valid")
+  lastValidatedAt  DateTime? @map("last_validated_at")
+  validationError  String?   @map("validation_error")
+
+  // n8n credential ID
+  n8nCredentialId String? @map("n8n_credential_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user                       User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app                        App                         @relation(fields: [appId], references: [id])
+  workflowCredentialMappings WorkflowCredentialMapping[]
+
+  @@unique([userId, appId])
+  @@index([userId])
+  @@index([appId])
+  @@map("credentials")
+}
+
+// ============================================
+// USER WORKFLOWS
+// ============================================
+
+model UserWorkflow {
+  id         String @id @default(uuid())
+  userId     String @map("user_id")
+  templateId String @map("template_id")
+
+  // Workflow info
+  name        String
+  description String?
+
+  // Configuration
+  configValues Json @default("{}") @map("config_values")
+
+  // n8n sync
+  n8nWorkflowId   String? @map("n8n_workflow_id")
+  n8nWorkflowData Json?   @map("n8n_workflow_data")
+
+  // Status
+  status       WorkflowStatus @default(inactive)
+  isActive     Boolean        @default(false) @map("is_active")
+  errorMessage String?        @map("error_message")
+
+  // Timestamps
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  activatedAt   DateTime? @map("activated_at")
+  deactivatedAt DateTime? @map("deactivated_at")
+
+  // Relations
+  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template            Template                    @relation(fields: [templateId], references: [id])
+  credentialMappings  WorkflowCredentialMapping[]
+  executions          Execution[]
+  statistics          WorkflowStatistics?
+
+  @@index([userId])
+  @@index([templateId])
+  @@index([status])
+  @@map("user_workflows")
+}
+
+model WorkflowCredentialMapping {
+  id             String @id @default(uuid())
+  userWorkflowId String @map("user_workflow_id")
+  credentialId   String @map("credential_id")
+
+  // Which app slot this credential fills
+  appSlug String @map("app_slug")
+
+  // n8n node reference
+  n8nNodeName String? @map("n8n_node_name")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  userWorkflow UserWorkflow @relation(fields: [userWorkflowId], references: [id], onDelete: Cascade)
+  credential   Credential   @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@unique([userWorkflowId, appSlug])
+  @@index([userWorkflowId])
+  @@index([credentialId])
+  @@map("workflow_credential_mappings")
+}
+
+// ============================================
+// EXECUTIONS
+// ============================================
+
+model Execution {
+  id             String @id @default(uuid())
+  userWorkflowId String @map("user_workflow_id")
+
+  // n8n execution reference
+  n8nExecutionId String? @map("n8n_execution_id")
+
+  // Status
+  status ExecutionStatus @default(running)
+
+  // Timing
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  durationMs Int?      @map("duration_ms")
+
+  // Data
+  inputData  Json? @map("input_data")
+  outputData Json? @map("output_data")
+
+  // Error info
+  errorMessage String? @map("error_message")
+  errorNode    String? @map("error_node")
+  errorCode    String? @map("error_code")
+
+  // Metadata
+  isTestRun   Boolean @default(false) @map("is_test_run")
+  triggerType String? @map("trigger_type")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  userWorkflow UserWorkflow @relation(fields: [userWorkflowId], references: [id], onDelete: Cascade)
+
+  @@index([userWorkflowId])
+  @@index([status])
+  @@index([startedAt(sort: Desc)])
+  @@index([n8nExecutionId])
+  @@map("executions")
+}
+
+model WorkflowStatistics {
+  userWorkflowId String @id @map("user_workflow_id")
+
+  totalExecutions      Int @default(0) @map("total_executions")
+  successfulExecutions Int @default(0) @map("successful_executions")
+  failedExecutions     Int @default(0) @map("failed_executions")
+
+  lastExecutionAt DateTime? @map("last_execution_at")
+  lastSuccessAt   DateTime? @map("last_success_at")
+  lastFailureAt   DateTime? @map("last_failure_at")
+
+  avgDurationMs Int? @map("avg_duration_ms")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userWorkflow UserWorkflow @relation(fields: [userWorkflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_statistics")
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id     String  @id @default(uuid())
+  userId String? @map("user_id")
+
+  action       String
+  resourceType String? @map("resource_type")
+  resourceId   String? @map("resource_id")
+
+  details   Json?
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}

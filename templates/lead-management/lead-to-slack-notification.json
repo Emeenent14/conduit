@@ -1,0 +1,157 @@
+{
+  "$schema": "../template.schema.json",
+  "metadata": {
+    "slug": "lead-to-slack-notification",
+    "name": "New Lead → Slack Notification",
+    "description": "Get instant Slack notifications when a new lead submits your Typeform",
+    "longDescription": "## How This Works\n\nThis automation monitors your Typeform for new submissions and instantly sends a formatted notification to your chosen Slack channel.\n\n### What You'll Get\n\n- **Real-time alerts**: Know about new leads within seconds\n- **Formatted messages**: Clean, easy-to-read lead information\n- **Customizable channel**: Send to any Slack channel you choose\n\n### Perfect For\n\n- Sales teams wanting instant lead notifications\n- Small businesses that need quick follow-up\n- Anyone using Typeform for lead capture\n\n### Setup Time\n\nAbout 5 minutes to connect your accounts and configure.",
+    "category": "lead-management",
+    "tags": ["leads", "notifications", "real-time", "sales"],
+    "estimatedSetupMinutes": 5,
+    "author": "FlowMatic",
+    "version": "1.0.0"
+  },
+  "requirements": {
+    "apps": [
+      {
+        "slug": "typeform",
+        "role": "trigger",
+        "description": "Monitors your form for new responses"
+      },
+      {
+        "slug": "slack",
+        "role": "action",
+        "description": "Sends notifications to your team"
+      }
+    ]
+  },
+  "configuration": {
+    "fields": [
+      {
+        "id": "slack_channel",
+        "type": "text",
+        "label": "Slack Channel",
+        "placeholder": "#leads",
+        "required": true,
+        "helpText": "The channel where lead notifications will be posted. Include the # symbol.",
+        "validation": {
+          "pattern": "^#[a-z0-9-_]+$",
+          "message": "Must be a valid Slack channel (e.g., #leads)"
+        }
+      },
+      {
+        "id": "notification_emoji",
+        "type": "select",
+        "label": "Notification Emoji",
+        "default": "🔔",
+        "required": false,
+        "helpText": "The emoji that appears at the start of each notification",
+        "options": [
+          { "value": "🔔", "label": "🔔 Bell" },
+          { "value": "🎯", "label": "🎯 Target" },
+          { "value": "⚡", "label": "⚡ Lightning" },
+          { "value": "🚀", "label": "🚀 Rocket" },
+          { "value": "💰", "label": "💰 Money" },
+          { "value": "👤", "label": "👤 Person" }
+        ]
+      },
+      {
+        "id": "include_timestamp",
+        "type": "boolean",
+        "label": "Include submission time",
+        "default": true,
+        "helpText": "Add the time when the lead submitted the form"
+      }
+    ]
+  },
+  "n8nWorkflow": {
+    "name": "{{WORKFLOW_NAME}}",
+    "nodes": [
+      {
+        "parameters": {
+          "formId": "={{$credentials.typeformApi.formId}}"
+        },
+        "id": "typeform-trigger",
+        "name": "Typeform Trigger",
+        "type": "n8n-nodes-base.typeformTrigger",
+        "typeVersion": 1,
+        "position": [250, 300],
+        "webhookId": "{{WORKFLOW_ID}}-typeform",
+        "credentials": {
+          "typeformApi": "{{CREDENTIAL:typeform}}"
+        }
+      },
+      {
+        "parameters": {
+          "channel": "{{CONFIG:slack_channel}}",
+          "text": "={{\"{{CONFIG:notification_emoji}} *New Lead!*\\n\\n\"}}",
+          "attachments": [],
+          "otherOptions": {
+            "includeLinkToWorkflow": false
+          },
+          "blocksUi": {
+            "blocksValues": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "={{\"{{CONFIG:notification_emoji}} *New Lead Submitted!*\"}}"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "=\"*Name:*\\n\" + $json.answers.find(a => a.field.type === 'short_text')?.text || 'Not provided'"
+                  },
+                  {
+                    "type": "mrkdwn", 
+                    "text": "=\"*Email:*\\n\" + $json.answers.find(a => a.field.type === 'email')?.email || 'Not provided'"
+                  }
+                ]
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "=\"Submitted via Typeform • \" + $now.format('MMM D, YYYY h:mm A')"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "id": "slack-notification",
+        "name": "Slack Notification",
+        "type": "n8n-nodes-base.slack",
+        "typeVersion": 2.1,
+        "position": [500, 300],
+        "credentials": {
+          "slackOAuth2Api": "{{CREDENTIAL:slack}}"
+        }
+      }
+    ],
+    "connections": {
+      "Typeform Trigger": {
+        "main": [
+          [
+            {
+              "node": "Slack Notification",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "saveManualExecutions": true,
+      "callerPolicy": "workflowsFromSameOwner"
+    },
+    "staticData": null,
+    "tags": []
+  }
+}

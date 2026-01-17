@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,17 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Conduit Dashboard</h1>
+          <div className="flex items-center gap-8">
+            <h1 className="text-2xl font-bold text-gray-900">Conduit</h1>
+            <nav className="flex gap-6">
+              <Link href="/dashboard" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                Dashboard
+              </Link>
+              <Link href="/templates" className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                Templates
+              </Link>
+            </nav>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">Welcome, {user.name}!</span>
             <Button onClick={logout} variant="outline" size="sm">
@@ -74,7 +85,9 @@ export default function DashboardPage() {
             <p className="text-gray-600 mb-4">
               Welcome to Conduit! You can start by browsing our template catalog and creating your first workflow.
             </p>
-            <Button>Browse Templates</Button>
+            <Link href="/templates">
+              <Button>Browse Templates</Button>
+            </Link>
           </CardContent>
         </Card>
       </main>

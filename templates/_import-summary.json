@@ -1,0 +1,37 @@
+{
+  "total": 288,
+  "converted": 280,
+  "failed": 8,
+  "categories": [
+    "operations",
+    "support",
+    "lead-management",
+    "marketing"
+  ],
+  "apps": [
+    "google-drive",
+    "gmail",
+    "airtable",
+    "google-calendar",
+    "telegram",
+    "google-sheets",
+    "twitter",
+    "openai",
+    "discord",
+    "slack",
+    "typeform",
+    "notion",
+    "whatsapp",
+    "wordpress"
+  ],
+  "failedFiles": [
+    "AI_Research_RAG_and_Data_Analysis\\Host Your Own AI Deep Research Agent with n8n, Apify and OpenAI o3.json",
+    "AI_Research_RAG_and_Data_Analysis\\Recipe Recommendations with Qdrant and Mistral.json",
+    "AI_Research_RAG_and_Data_Analysis\\🔍 Perplexity Research to HTML_ AI-Powered Content Creation.json",
+    "Notion\\Automate Competitor Research with Exa.ai, Notion and AI Agents.json",
+    "OpenAI_and_LLMs\\AI-Driven Lead Management and Inquiry Automation with ERPNext & n8n.json",
+    "OpenAI_and_LLMs\\lemlist __ GPT-3_ Supercharge your sales workflows.json",
+    "Other\\ALL_unique_nodes.json",
+    "PDF_and_Document_Processing\\Parse PDF with LlamaParse and save to Airtable.json"
+  ]
+}

@@ -8,7 +8,7 @@ services:
   # Main PostgreSQL database (Conduit data)
   # ============================================
   postgres:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: conduit-postgres
     restart: unless-stopped
     environment:
@@ -32,7 +32,7 @@ services:
   # n8n PostgreSQL database (separate for isolation)
   # ============================================
   postgres-n8n:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: conduit-postgres-n8n
     restart: unless-stopped
     environment:
@@ -55,7 +55,7 @@ services:
   # Redis (caching, job queue, sessions)
   # ============================================
   redis:
-    image: redis:7-alpine
+    image: redis:latest
     container_name: conduit-redis
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis_dev_password} --appendonly yes

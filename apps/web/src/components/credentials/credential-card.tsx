@@ -1,6 +1,7 @@
 import { CheckCircle2, XCircle, AlertTriangle, Trash2, TestTube2 } from 'lucide-react';
 import { Credential } from '@/lib/api/credentials.api';
 import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
 
 interface CredentialCardProps {
   credential: Credential;
@@ -80,11 +81,14 @@ export function CredentialCard({
       {/* App Info */}
       <div className="mb-4">
         {credential.app.iconUrl ? (
-          <img
-            src={credential.app.iconUrl}
-            alt={credential.app.name}
-            className="h-12 w-12 rounded-lg mb-3"
-          />
+          <div className="relative h-12 w-12 rounded-lg mb-3 overflow-hidden">
+            <Image
+              src={credential.app.iconUrl}
+              alt={credential.app.name}
+              fill
+              className="object-cover"
+            />
+          </div>
         ) : (
           <div className="h-12 w-12 rounded-lg bg-sky-500/10 flex items-center justify-center mb-3">
             <span className="text-2xl font-bold text-sky-400">

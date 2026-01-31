@@ -30,7 +30,7 @@ export function IntegrationsPreview() {
                             Connect to 400+ apps
                         </h2>
                         <p className="mt-4 text-lg text-muted-foreground max-w-xl">
-                            Seamlessly integrate with your existing tools. From CRMs to databases, we've got you covered.
+                            Seamlessly integrate with your existing tools. From CRMs to databases, we&apos;ve got you covered.
                         </p>
                     </div>
                     <Link

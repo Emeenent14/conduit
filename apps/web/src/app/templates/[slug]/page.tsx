@@ -114,7 +114,7 @@ export default function TemplateDetailPage() {
               <Zap className="h-8 w-8" />
             </div>
             <h2 className="text-2xl font-bold mb-2">Template Not Found</h2>
-            <p className="text-muted-foreground mb-8">The template you're looking for doesn't exist.</p>
+            <p className="text-muted-foreground mb-8">The template you&apos;re looking for doesn&apos;t exist.</p>
             <Link
               href="/templates"
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-white/90 transition-colors"

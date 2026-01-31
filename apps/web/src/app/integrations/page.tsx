@@ -70,7 +70,7 @@ export default function IntegrationsPage() {
                                 Connect to 400+ apps
                             </h1>
                             <p className="mt-6 text-lg text-muted-foreground">
-                                Seamlessly integrate with your existing tools. From CRMs to AI models, we've got you covered.
+                                Seamlessly integrate with your existing tools. From CRMs to AI models, we&apos;ve got you covered.
                             </p>
                         </div>
 
@@ -98,8 +98,8 @@ export default function IntegrationsPage() {
                                     key={cat}
                                     onClick={() => setActiveCategory(cat)}
                                     className={`px-4 py-2 text-sm rounded-full transition-colors ${activeCategory === cat
-                                            ? 'bg-sky-500 text-white'
-                                            : 'bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10'
+                                        ? 'bg-sky-500 text-white'
+                                        : 'bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10'
                                         }`}
                                 >
                                     {cat}
@@ -150,9 +150,9 @@ export default function IntegrationsPage() {
                 {/* CTA */}
                 <section className="py-24 border-t border-white/5 text-center">
                     <div className="mx-auto max-w-xl px-6">
-                        <h2 className="text-2xl font-bold mb-4">Don't see what you need?</h2>
+                        <h2 className="text-2xl font-bold mb-4">Don&apos;t see what you need?</h2>
                         <p className="text-muted-foreground mb-8">
-                            We're constantly adding new integrations. Let us know what you'd like to see.
+                            We&apos;re constantly adding new integrations. Let us know what you&apos;d like to see.
                         </p>
                         <Link
                             href="/contact"

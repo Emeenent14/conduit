@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Clock, Zap, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import { Header } from '@/components/landing/header';
 import { Footer } from '@/components/landing/footer';
+import { getTemplate } from '@/lib/api/templates.api';
 
 interface App {
   slug: string;
@@ -39,152 +40,7 @@ interface TemplateResponse {
   data: Template;
 }
 
-// Demo templates data (same as in templates page)
-const demoTemplates: Template[] = [
-  {
-    id: '1',
-    slug: 'slack-gmail-notification',
-    name: 'Slack to Gmail Notifications',
-    description: 'Forward important Slack messages to your inbox automatically.',
-    longDescription: 'This template monitors specific Slack channels for important messages and automatically forwards them to your Gmail inbox. Perfect for staying on top of critical updates even when you\'re not actively checking Slack.',
-    tags: ['notifications', 'email', 'productivity'],
-    popularity: 95,
-    estimatedSetupMinutes: 5,
-    category: { id: '1', slug: 'productivity', name: 'Productivity' },
-    requiredApps: [
-      { slug: 'slack', name: 'Slack', icon: '', authType: 'oauth2' },
-      { slug: 'gmail', name: 'Gmail', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Connect your Slack workspace', 'Select channels to monitor', 'Configure email settings', 'Set notification rules', 'Activate workflow'],
-  },
-  {
-    id: '2',
-    slug: 'github-discord-alerts',
-    name: 'GitHub to Discord Alerts',
-    description: 'Get instant Discord notifications for GitHub events like PRs and issues.',
-    longDescription: 'Keep your development team in sync with real-time Discord notifications for GitHub activity. Get alerts for new pull requests, issues, comments, and more directly in your Discord server.',
-    tags: ['developer', 'notifications', 'github'],
-    popularity: 88,
-    estimatedSetupMinutes: 3,
-    category: { id: '2', slug: 'developer', name: 'Developer Tools' },
-    requiredApps: [
-      { slug: 'github', name: 'GitHub', icon: '', authType: 'oauth2' },
-      { slug: 'discord', name: 'Discord', icon: '', authType: 'webhook' },
-    ],
-    steps: ['Connect GitHub account', 'Select repositories', 'Configure Discord webhook', 'Choose event types', 'Go live'],
-  },
-  {
-    id: '3',
-    slug: 'airtable-notion-sync',
-    name: 'Airtable to Notion Sync',
-    description: 'Keep your Airtable bases and Notion databases in perfect sync.',
-    longDescription: 'Automatically sync records between Airtable and Notion databases. When a record is created or updated in Airtable, the corresponding Notion page is updated in real-time.',
-    tags: ['database', 'sync', 'productivity'],
-    popularity: 82,
-    estimatedSetupMinutes: 10,
-    category: { id: '1', slug: 'productivity', name: 'Productivity' },
-    requiredApps: [
-      { slug: 'airtable', name: 'Airtable', icon: '', authType: 'apikey' },
-      { slug: 'notion', name: 'Notion', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Connect Airtable account', 'Select base and table', 'Connect Notion workspace', 'Map fields', 'Configure sync direction', 'Activate'],
-  },
-  {
-    id: '4',
-    slug: 'stripe-slack-payments',
-    name: 'Stripe Payment Alerts',
-    description: 'Get Slack notifications for every successful Stripe payment.',
-    longDescription: 'Celebrate every sale! Get instant Slack notifications when customers make payments through Stripe. Perfect for keeping your team motivated and informed about revenue in real-time.',
-    tags: ['payments', 'notifications', 'sales'],
-    popularity: 91,
-    estimatedSetupMinutes: 5,
-    category: { id: '3', slug: 'sales', name: 'Sales & CRM' },
-    requiredApps: [
-      { slug: 'stripe', name: 'Stripe', icon: '', authType: 'apikey' },
-      { slug: 'slack', name: 'Slack', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Connect Stripe account', 'Connect Slack workspace', 'Choose notification channel', 'Customize message format', 'Activate'],
-  },
-  {
-    id: '5',
-    slug: 'hubspot-email-sequence',
-    name: 'HubSpot Email Sequences',
-    description: 'Automatically add new contacts to email nurture sequences.',
-    longDescription: 'Streamline your sales process by automatically enrolling new HubSpot contacts into email nurture sequences based on their properties and behavior.',
-    tags: ['crm', 'marketing', 'automation'],
-    popularity: 79,
-    estimatedSetupMinutes: 15,
-    category: { id: '4', slug: 'marketing', name: 'Marketing' },
-    requiredApps: [
-      { slug: 'hubspot', name: 'HubSpot', icon: '', authType: 'oauth2' },
-      { slug: 'gmail', name: 'Gmail', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Connect HubSpot', 'Define contact filters', 'Create email sequence', 'Set timing rules', 'Test and activate'],
-  },
-  {
-    id: '6',
-    slug: 'openai-content-generator',
-    name: 'AI Content Generator',
-    description: 'Generate blog posts, social media content, and more with GPT-4.',
-    longDescription: 'Leverage the power of GPT-4 to automatically generate high-quality content. Create blog posts, social media updates, product descriptions, and more with AI assistance.',
-    tags: ['ai', 'content', 'marketing'],
-    popularity: 96,
-    estimatedSetupMinutes: 8,
-    category: { id: '5', slug: 'ai', name: 'AI & ML' },
-    requiredApps: [
-      { slug: 'openai', name: 'OpenAI', icon: '', authType: 'apikey' },
-      { slug: 'notion', name: 'Notion', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Add OpenAI API key', 'Configure content prompts', 'Connect Notion for storage', 'Set generation schedule', 'Review and publish'],
-  },
-  {
-    id: '7',
-    slug: 'calendar-reminder-sms',
-    name: 'Calendar SMS Reminders',
-    description: 'Send SMS reminders for upcoming calendar events via Twilio.',
-    longDescription: 'Never miss an important meeting again. Automatically send SMS reminders to yourself or attendees before calendar events using Twilio.',
-    tags: ['calendar', 'notifications', 'sms'],
-    popularity: 74,
-    estimatedSetupMinutes: 7,
-    category: { id: '1', slug: 'productivity', name: 'Productivity' },
-    requiredApps: [
-      { slug: 'google-calendar', name: 'Google Calendar', icon: '', authType: 'oauth2' },
-      { slug: 'twilio', name: 'Twilio', icon: '', authType: 'apikey' },
-    ],
-    steps: ['Connect Google Calendar', 'Set up Twilio account', 'Configure reminder timing', 'Customize message template', 'Enable'],
-  },
-  {
-    id: '8',
-    slug: 'salesforce-lead-enrichment',
-    name: 'Lead Enrichment Pipeline',
-    description: 'Automatically enrich Salesforce leads with company and contact data.',
-    longDescription: 'Enhance your Salesforce leads with rich company and contact data automatically. Get detailed information about companies, decision makers, and more.',
-    tags: ['crm', 'enrichment', 'sales'],
-    popularity: 85,
-    estimatedSetupMinutes: 12,
-    category: { id: '3', slug: 'sales', name: 'Sales & CRM' },
-    requiredApps: [
-      { slug: 'salesforce', name: 'Salesforce', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Connect Salesforce', 'Configure enrichment sources', 'Map data fields', 'Set trigger conditions', 'Activate pipeline'],
-  },
-  {
-    id: '9',
-    slug: 'shopify-order-fulfillment',
-    name: 'Shopify Order Automation',
-    description: 'Automate order processing, fulfillment, and customer notifications.',
-    longDescription: 'Streamline your e-commerce operations with automated order processing. From order receipt to fulfillment and customer notification, everything runs on autopilot.',
-    tags: ['ecommerce', 'orders', 'automation'],
-    popularity: 87,
-    estimatedSetupMinutes: 20,
-    category: { id: '6', slug: 'ecommerce', name: 'E-commerce' },
-    requiredApps: [
-      { slug: 'shopify', name: 'Shopify', icon: '', authType: 'oauth2' },
-      { slug: 'slack', name: 'Slack', icon: '', authType: 'oauth2' },
-    ],
-    steps: ['Connect Shopify store', 'Configure order triggers', 'Set up fulfillment rules', 'Create notification templates', 'Enable automation'],
-  },
-];
+// Demo templates data (removed)
 
 // Generate steps from n8n workflow
 function generateStepsFromWorkflow(workflow: any): string[] {
@@ -228,11 +84,7 @@ export default function TemplateDetailPage() {
   // Fetch template from API
   const { data, isLoading, error } = useQuery<TemplateResponse>({
     queryKey: ['template', slug],
-    queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1/templates/${slug}`);
-      if (!response.ok) throw new Error('Failed to fetch template');
-      return response.json();
-    },
+    queryFn: () => getTemplate(slug).then(data => ({ success: true, data })), // getTemplate returns just data in my previous impl? check templates.api.ts
   });
 
   const template = data?.data;

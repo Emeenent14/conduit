@@ -22,6 +22,10 @@ export default function CredentialsPage() {
     queryFn: credentialsApi.listCredentials,
   });
 
+  if (error) {
+    console.error('Credentials loading error:', error);
+  }
+
   // Delete credential mutation
   const deleteMutation = useMutation({
     mutationFn: credentialsApi.deleteCredential,
@@ -74,7 +78,7 @@ export default function CredentialsPage() {
     }
     acc[provider].push(cred);
     return acc;
-  }, {} as Record<string, typeof credentials>);
+  }, {} as Record<string, NonNullable<typeof credentials>>);
 
   return (
     <div className="min-h-screen bg-background">

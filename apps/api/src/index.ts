@@ -15,6 +15,7 @@ import oauthRoutes from './routes/oauth.routes';
 import workflowRoutes from './routes/workflow.routes';
 import executionRoutes from './routes/execution.routes';
 import userRoutes from './routes/user.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 
 const app = express();
 
@@ -73,6 +74,7 @@ apiRouter.use('/oauth', oauthRoutes);
 apiRouter.use('/workflows', workflowRoutes);
 apiRouter.use('/executions', executionRoutes);
 apiRouter.use('/user', userRoutes);
+apiRouter.use('/dashboard', dashboardRoutes);
 
 app.use('/api/v1', apiRouter);
 

@@ -25,6 +25,7 @@ export interface CredentialData {
   // OAuth metadata (if applicable)
   oauthExpiresAt?: Date | null;
   oauthScopes?: string[];
+  n8nCredentialId?: string | null;
 }
 
 export interface CreateApiKeyCredentialInput {
@@ -71,6 +72,7 @@ export async function listUserCredentials(userId: string): Promise<CredentialDat
     updatedAt: cred.updatedAt,
     oauthExpiresAt: cred.oauthExpiresAt,
     oauthScopes: cred.oauthScopes,
+    n8nCredentialId: cred.n8nCredentialId,
   }));
 }
 
@@ -111,6 +113,7 @@ export async function getCredentialById(credentialId: string, userId: string): P
     updatedAt: credential.updatedAt,
     oauthExpiresAt: credential.oauthExpiresAt,
     oauthScopes: credential.oauthScopes,
+    n8nCredentialId: credential.n8nCredentialId,
   };
 }
 
@@ -186,6 +189,7 @@ export async function createApiKeyCredential(input: CreateApiKeyCredentialInput)
     validationError: credential.validationError,
     createdAt: credential.createdAt,
     updatedAt: credential.updatedAt,
+    n8nCredentialId: credential.n8nCredentialId, // Usually null on creation but good to be consistent
   };
 }
 

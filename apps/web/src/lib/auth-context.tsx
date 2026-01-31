@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const token = localStorage.getItem('accessToken');
         if (token) {
-          const response = await api.get('/api/v1/auth/me');
+          const response = await api.get('/auth/me');
           setUser(response.data.data);
         }
       } catch (error) {
@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await api.post('/api/v1/auth/login', { email, password });
+    const response = await api.post('/auth/login', { email, password });
     const { user, accessToken, refreshToken } = response.data.data;
 
     localStorage.setItem('accessToken', accessToken);
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (email: string, password: string, name: string) => {
-    const response = await api.post('/api/v1/auth/register', {
+    const response = await api.post('/auth/register', {
       email,
       password,
       name,
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await api.post('/api/v1/auth/logout');
+      await api.post('/auth/logout');
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshUser = async () => {
-    const response = await api.get('/api/v1/auth/me');
+    const response = await api.get('/auth/me');
     setUser(response.data.data);
   };
 

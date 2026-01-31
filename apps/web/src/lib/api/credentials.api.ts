@@ -1,8 +1,4 @@
-// ============================================
-// Credentials API Client
-// ============================================
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { api } from '../api-client';
 
 export interface Credential {
   id: string;
@@ -36,44 +32,10 @@ export interface TestCredentialResult {
 }
 
 /**
- * Get authorization token from localStorage
- */
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('access_token');
-}
-
-/**
- * Create API headers with authorization
- */
-function createHeaders(): HeadersInit {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  const token = getAuthToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
-/**
  * List all credentials for the current user
  */
 export async function listCredentials(): Promise<Credential[]> {
-  const response = await fetch(`${API_URL}/api/v1/credentials`, {
-    method: 'GET',
-    headers: createHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch credentials');
-  }
-
-  const data = await response.json();
+  const { data } = await api.get('/credentials');
   return data.data;
 }
 
@@ -81,17 +43,7 @@ export async function listCredentials(): Promise<Credential[]> {
  * Get a single credential by ID
  */
 export async function getCredential(id: string): Promise<Credential> {
-  const response = await fetch(`${API_URL}/api/v1/credentials/${id}`, {
-    method: 'GET',
-    headers: createHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch credential');
-  }
-
-  const data = await response.json();
+  const { data } = await api.get(`/credentials/${id}`);
   return data.data;
 }
 
@@ -99,19 +51,7 @@ export async function getCredential(id: string): Promise<Credential> {
  * Create an API key credential
  */
 export async function createApiKeyCredential(input: CreateApiKeyInput): Promise<Credential> {
-  const response = await fetch(`${API_URL}/api/v1/credentials`, {
-    method: 'POST',
-    headers: createHeaders(),
-    credentials: 'include',
-    body: JSON.stringify(input),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to create credential');
-  }
-
-  const data = await response.json();
+  const { data } = await api.post('/credentials', input);
   return data.data;
 }
 
@@ -119,32 +59,14 @@ export async function createApiKeyCredential(input: CreateApiKeyInput): Promise<
  * Delete a credential
  */
 export async function deleteCredential(id: string): Promise<void> {
-  const response = await fetch(`${API_URL}/api/v1/credentials/${id}`, {
-    method: 'DELETE',
-    headers: createHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete credential');
-  }
+  await api.delete(`/credentials/${id}`);
 }
 
 /**
  * Test a credential
  */
 export async function testCredential(id: string): Promise<TestCredentialResult> {
-  const response = await fetch(`${API_URL}/api/v1/credentials/${id}/test`, {
-    method: 'POST',
-    headers: createHeaders(),
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to test credential');
-  }
-
-  const data = await response.json();
+  const { data } = await api.post(`/credentials/${id}/test`);
   return data.data;
 }
 
@@ -156,6 +78,8 @@ export function getOAuthUrl(provider: 'google' | 'slack', returnUrl?: string): s
   if (returnUrl) {
     params.append('returnUrl', returnUrl);
   }
-
-  return `${API_URL}/api/v1/oauth/${provider}/authorize?${params.toString()}`;
+  // This helper might still need to specific about base URL if it returns a string for the browser to navigate to
+  // But usually api client baseURL includes /api/v1 now.
+  // We can get baseURL from api.defaults.baseURL
+  return `${api.defaults.baseURL}/oauth/${provider}/authorize?${params.toString()}`;
 }

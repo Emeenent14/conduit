@@ -5,6 +5,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { N8nCredentialService } from '../n8n/n8n-credential.service';
 import { GoogleOAuthService } from './google-oauth.service';
 import { SlackOAuthService } from './slack-oauth.service';
+import { ApiException } from '../common/exceptions/api.exception';
 
 interface OAuthState {
   userId: string;
@@ -46,20 +47,22 @@ export class OAuthService {
   }
 
   private parseState(stateParam: string): OAuthState {
+    let state: OAuthState;
     try {
-      const state: OAuthState = JSON.parse(
-        Buffer.from(stateParam, 'base64url').toString('utf8'),
-      );
-
-      const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
-      if (state.timestamp < fifteenMinutesAgo) {
-        throw new Error('OAuth state has expired');
-      }
-
-      return state;
+      state = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf8'));
     } catch {
-      throw new Error('Invalid OAuth state parameter');
+      throw ApiException.badRequest('Invalid OAuth state parameter');
     }
+
+    // Checked outside the parse try/catch above so an expired-but-otherwise-
+    // valid state gets its own distinct error instead of being swallowed
+    // into the generic "invalid" message.
+    const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+    if (state.timestamp < fifteenMinutesAgo) {
+      throw ApiException.badRequest('OAuth state has expired');
+    }
+
+    return state;
   }
 
   private async getAppByProvider(provider: string) {
@@ -69,12 +72,16 @@ export class OAuthService {
     };
     const appSlug = providerMap[provider];
     if (!appSlug) {
-      throw new Error(`Unknown OAuth provider: ${provider}`);
+      throw ApiException.badRequest(`Unknown OAuth provider: ${provider}`);
     }
 
     const app = await this.prisma.app.findUnique({ where: { slug: appSlug } });
     if (!app) {
-      throw new Error(`App not found for provider: ${provider}`);
+      throw new ApiException(
+        404,
+        `App not found for provider: ${provider}`,
+        'NOT_FOUND',
+      );
     }
 
     return app;

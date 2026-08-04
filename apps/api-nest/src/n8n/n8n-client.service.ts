@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { AppConfigService } from '../config/app-config.service';
 
@@ -68,6 +68,7 @@ export interface N8nExecutionDetail extends N8nExecution {
  */
 @Injectable()
 export class N8nClientService {
+  private readonly logger = new Logger(N8nClientService.name);
   private readonly client: AxiosInstance;
 
   constructor(private readonly config: AppConfigService) {
@@ -210,7 +211,8 @@ export class N8nClientService {
     try {
       await this.client.get('/workflows', { params: { limit: 1 } });
       return true;
-    } catch {
+    } catch (error) {
+      this.logger.warn(`n8n health check failed: ${error}`);
       return false;
     }
   }

@@ -3,11 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { AppConfigService } from '../config/app-config.service';
 import { N8nClientService, N8nCredential } from './n8n-client.service';
+import { ApiException } from '../common/exceptions/api.exception';
 
 /**
- * Map our app slugs to n8n credential types
+ * Map our app slugs to n8n credential types. Also used by WorkflowsService
+ * to resolve which of a workflow's credentialMappings belongs on a given
+ * n8n node, by reversing this same map.
  */
-const N8N_CREDENTIAL_TYPE_MAP: Record<string, string> = {
+export const N8N_CREDENTIAL_TYPE_MAP: Record<string, string> = {
   google: 'googleOAuth2Api',
   slack: 'slackOAuth2Api',
   openai: 'openAiApi',
@@ -36,7 +39,7 @@ export class N8nCredentialService {
   private getN8nCredentialType(appSlug: string): string {
     const type = N8N_CREDENTIAL_TYPE_MAP[appSlug];
     if (!type) {
-      throw new Error(
+      throw ApiException.internal(
         `No n8n credential type mapping found for app: ${appSlug}`,
       );
     }
@@ -85,7 +88,7 @@ export class N8nCredentialService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     const credentialsData = this.encryption.decryptJson(
@@ -130,7 +133,9 @@ export class N8nCredentialService {
       }
     }
 
-    throw new Error(`Unsupported auth type: ${credential.app.authType}`);
+    throw ApiException.internal(
+      `Unsupported auth type: ${credential.app.authType}`,
+    );
   }
 
   /**
@@ -144,7 +149,7 @@ export class N8nCredentialService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     try {
@@ -190,7 +195,9 @@ export class N8nCredentialService {
       this.logger.error(
         `Failed to sync credential ${credentialId} to n8n: ${error.message}`,
       );
-      throw new Error(`Failed to sync credential to n8n: ${error.message}`);
+      throw ApiException.n8nError(
+        `Failed to sync credential to n8n: ${error.message}`,
+      );
     }
   }
 

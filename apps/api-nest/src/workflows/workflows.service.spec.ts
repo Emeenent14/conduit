@@ -178,7 +178,7 @@ describe(WorkflowsService, () => {
       expect(result).toEqual({ id: 'uw-1', userId: baseInput.userId });
     });
 
-    it('does not break when credentialMappings is non-empty (no-op injection loop)', async () => {
+    it("wires the matching credentialMapping's n8nCredentialId into the node's credentials record", async () => {
       const n8nWorkflow = {
         name: 'template-name',
         nodes: [
@@ -188,7 +188,7 @@ describe(WorkflowsService, () => {
             typeVersion: 1,
             position: [0, 0],
             parameters: {},
-            credentials: { someCred: 'placeholder' },
+            credentials: { slackOAuth2Api: 'placeholder' },
           },
         ],
         connections: {},
@@ -216,6 +216,18 @@ describe(WorkflowsService, () => {
         'cred-1',
         baseInput.userId,
       );
+      // The node's placeholder credential value is replaced with the real,
+      // already-synced n8n credential id -- this is the fix for the loop
+      // that used to fetch the credential and then do nothing with it.
+      expect(mockN8n.createWorkflow).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nodes: [
+            expect.objectContaining({
+              credentials: { slackOAuth2Api: 'n8n-cred-1' },
+            }),
+          ],
+        }),
+      );
       expect(mockPrisma.userWorkflow.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           credentialMappings: {
@@ -224,6 +236,74 @@ describe(WorkflowsService, () => {
         }),
       });
       expect(result).toEqual({ id: 'uw-1' });
+    });
+
+    it('skips a node credential type that has no known app-slug mapping, without calling getCredentialById', async () => {
+      const n8nWorkflow = {
+        name: 'template-name',
+        nodes: [
+          {
+            name: 'Node 1',
+            type: 'some.type',
+            typeVersion: 1,
+            position: [0, 0],
+            parameters: {},
+            credentials: { someUnmappedCredType: 'placeholder' },
+          },
+        ],
+        connections: {},
+      };
+      mockPrisma.template.findUnique.mockResolvedValue({
+        id: 'tpl-1',
+        n8nWorkflow,
+      });
+      mockN8n.createWorkflow.mockResolvedValue({ id: 'n8n-wf-1' });
+      mockPrisma.userWorkflow.create.mockResolvedValue({ id: 'uw-1' });
+      mockPrisma.workflowStatistics.create.mockResolvedValue({});
+
+      const input = {
+        ...baseInput,
+        credentialMappings: [{ appSlug: 'slack', credentialId: 'cred-1' }],
+      };
+
+      const result = await service.createWorkflow(input);
+
+      expect(mockCredentials.getCredentialById).not.toHaveBeenCalled();
+      expect(result).toEqual({ id: 'uw-1' });
+    });
+
+    it('skips a node credential type whose app slug has no matching credentialMapping', async () => {
+      const n8nWorkflow = {
+        name: 'template-name',
+        nodes: [
+          {
+            name: 'Node 1',
+            type: 'some.type',
+            typeVersion: 1,
+            position: [0, 0],
+            parameters: {},
+            credentials: { googleOAuth2Api: 'placeholder' },
+          },
+        ],
+        connections: {},
+      };
+      mockPrisma.template.findUnique.mockResolvedValue({
+        id: 'tpl-1',
+        n8nWorkflow,
+      });
+      mockN8n.createWorkflow.mockResolvedValue({ id: 'n8n-wf-1' });
+      mockPrisma.userWorkflow.create.mockResolvedValue({ id: 'uw-1' });
+      mockPrisma.workflowStatistics.create.mockResolvedValue({});
+
+      // Mapping is for 'slack', but the node needs 'google'.
+      const input = {
+        ...baseInput,
+        credentialMappings: [{ appSlug: 'slack', credentialId: 'cred-1' }],
+      };
+
+      await service.createWorkflow(input);
+
+      expect(mockCredentials.getCredentialById).not.toHaveBeenCalled();
     });
 
     it('skips the credential-injection loop entirely when there are no nodes', async () => {

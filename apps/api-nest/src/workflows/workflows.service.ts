@@ -3,6 +3,16 @@ import { WorkflowStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { N8nClientService, N8nWorkflow } from '../n8n/n8n-client.service';
 import { CredentialsService } from '../credentials/credentials.service';
+import { ApiException } from '../common/exceptions/api.exception';
+import { N8N_CREDENTIAL_TYPE_MAP } from '../n8n/n8n-credential.service';
+
+const APP_SLUG_BY_N8N_CREDENTIAL_TYPE: Record<string, string> =
+  Object.fromEntries(
+    Object.entries(N8N_CREDENTIAL_TYPE_MAP).map(([appSlug, n8nType]) => [
+      n8nType,
+      appSlug,
+    ]),
+  );
 
 export interface CreateWorkflowInput {
   userId: string;
@@ -14,9 +24,10 @@ export interface CreateWorkflowInput {
 }
 
 /**
- * Port of services/workflow.service.ts, including its as-is credential
- * injection logic (marked TODO/NOT IMPLEMENTED FULLY in the original --
- * carried over unchanged rather than "fixed" during the framework port).
+ * Port of services/workflow.service.ts. Unlike the Express version, the
+ * credential-injection step below actually wires each node's n8n
+ * credential type to the matching credentialMapping (see
+ * APP_SLUG_BY_N8N_CREDENTIAL_TYPE) instead of being a no-op.
  */
 @Injectable()
 export class WorkflowsService {
@@ -67,29 +78,35 @@ export class WorkflowsService {
       where: { id: templateId },
     });
     if (!template) {
-      throw new Error('Template not found');
+      throw ApiException.notFound('Template');
     }
 
     const n8nWorkflowData: N8nWorkflow =
       template.n8nWorkflow as unknown as N8nWorkflow;
     n8nWorkflowData.name = `${name} (${userId.substring(0, 8)})`;
 
-    // Credential injection: heuristic/incomplete in the source Express
-    // service too -- see services/workflow.service.ts for the same caveat.
+    // Wire each node's declared n8n credential type (e.g. "googleOAuth2Api")
+    // to the matching credentialMapping's already-synced n8n credential, so
+    // the workflow n8n receives references real credential resources rather
+    // than the template's placeholder values.
     if (n8nWorkflowData.nodes) {
       for (const node of n8nWorkflowData.nodes) {
-        for (const mapping of credentialMappings) {
+        if (!node.credentials) continue;
+
+        for (const credType of Object.keys(node.credentials)) {
+          const appSlug = APP_SLUG_BY_N8N_CREDENTIAL_TYPE[credType];
+          if (!appSlug) continue;
+
+          const mapping = credentialMappings.find((m) => m.appSlug === appSlug);
+          if (!mapping) continue;
+
           const credential = await this.credentialsService.getCredentialById(
             mapping.credentialId,
             userId,
           );
-          if (!credential) continue;
 
-          if (credential.n8nCredentialId && node.credentials) {
-            for (const [_credType] of Object.entries(node.credentials)) {
-              // Matching a node's credential type to our app mapping needs a
-              // richer map than exists today; left as-is pending that work.
-            }
+          if (credential?.n8nCredentialId) {
+            node.credentials[credType] = credential.n8nCredentialId;
           }
         }
       }
@@ -130,7 +147,11 @@ export class WorkflowsService {
     });
 
     if (!workflow || !workflow.n8nWorkflowId) {
-      throw new Error('Workflow not found or not synced to n8n');
+      throw new ApiException(
+        404,
+        'Workflow not found or not synced to n8n',
+        'NOT_FOUND',
+      );
     }
 
     await this.n8nClient.activateWorkflow(workflow.n8nWorkflowId);
@@ -151,7 +172,11 @@ export class WorkflowsService {
     });
 
     if (!workflow || !workflow.n8nWorkflowId) {
-      throw new Error('Workflow not found or not synced to n8n');
+      throw new ApiException(
+        404,
+        'Workflow not found or not synced to n8n',
+        'NOT_FOUND',
+      );
     }
 
     await this.n8nClient.deactivateWorkflow(workflow.n8nWorkflowId);
@@ -172,7 +197,7 @@ export class WorkflowsService {
     });
 
     if (!workflow) {
-      throw new Error('Workflow not found');
+      throw ApiException.notFound('Workflow');
     }
 
     if (workflow.n8nWorkflowId) {

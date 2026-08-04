@@ -262,7 +262,7 @@ describe(OAuthService, () => {
       expect(mockGoogleOAuth.exchangeCodeForTokens).not.toHaveBeenCalled();
     });
 
-    it('throws the SAME "Invalid OAuth state parameter" message for a validly-encoded but stale state', async () => {
+    it('throws a distinct "OAuth state has expired" message for a validly-encoded but stale state', async () => {
       const staleState = encodeState({
         userId: 'user-1',
         provider: 'google',
@@ -272,7 +272,7 @@ describe(OAuthService, () => {
 
       await expect(
         service.handleGoogleCallback('auth-code', staleState),
-      ).rejects.toThrow('Invalid OAuth state parameter');
+      ).rejects.toThrow('OAuth state has expired');
 
       expect(mockGoogleOAuth.exchangeCodeForTokens).not.toHaveBeenCalled();
     });
@@ -379,7 +379,7 @@ describe(OAuthService, () => {
       expect(mockSlackOAuth.exchangeCodeForTokens).not.toHaveBeenCalled();
     });
 
-    it('throws the SAME "Invalid OAuth state parameter" message for a validly-encoded but stale state', async () => {
+    it('throws a distinct "OAuth state has expired" message for a validly-encoded but stale state', async () => {
       const staleState = encodeState({
         userId: 'user-1',
         provider: 'slack',
@@ -389,7 +389,7 @@ describe(OAuthService, () => {
 
       await expect(
         service.handleSlackCallback('auth-code', staleState),
-      ).rejects.toThrow('Invalid OAuth state parameter');
+      ).rejects.toThrow('OAuth state has expired');
 
       expect(mockSlackOAuth.exchangeCodeForTokens).not.toHaveBeenCalled();
     });

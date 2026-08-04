@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { GoogleOAuthService } from '../oauth/google-oauth.service';
 import { N8nCredentialService } from '../n8n/n8n-credential.service';
+import { ApiException } from '../common/exceptions/api.exception';
 
 /**
  * Port of services/token-refresh.service.ts. That file existed in the
@@ -35,11 +36,11 @@ export class TokenRefreshService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     if (!credential.oauthRefreshTokenEncrypted) {
-      throw new Error('No refresh token available');
+      throw ApiException.badRequest('No refresh token available');
     }
 
     const refreshToken = this.encryption.decrypt({
@@ -96,11 +97,11 @@ export class TokenRefreshService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     if (credential.app.authType !== 'oauth2') {
-      throw new Error('Credential is not OAuth2 type');
+      throw ApiException.badRequest('Credential is not OAuth2 type');
     }
 
     switch (credential.app.slug) {
@@ -195,7 +196,7 @@ export class TokenRefreshService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     if (
@@ -212,7 +213,7 @@ export class TokenRefreshService {
       });
 
       if (!updatedCredential?.oauthAccessTokenEncrypted) {
-        throw new Error('Failed to refresh token');
+        throw ApiException.internal('Failed to refresh token');
       }
 
       return this.encryption.decrypt({
@@ -223,7 +224,7 @@ export class TokenRefreshService {
     }
 
     if (!credential.oauthAccessTokenEncrypted) {
-      throw new Error('No access token available');
+      throw ApiException.badRequest('No access token available');
     }
 
     return this.encryption.decrypt({

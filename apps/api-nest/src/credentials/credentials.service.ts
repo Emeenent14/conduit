@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EncryptionService } from '../encryption/encryption.service';
 import { N8nClientService } from '../n8n/n8n-client.service';
+import { ApiException } from '../common/exceptions/api.exception';
 
 export interface CredentialData {
   id: string;
@@ -106,17 +107,21 @@ export class CredentialsService {
 
     const app = await this.prisma.app.findUnique({ where: { slug: appSlug } });
     if (!app) {
-      throw new Error(`App not found: ${appSlug}`);
+      throw new ApiException(404, `App not found: ${appSlug}`, 'NOT_FOUND');
     }
     if (app.authType !== 'api_key') {
-      throw new Error(`App ${appSlug} does not support API key authentication`);
+      throw ApiException.badRequest(
+        `App ${appSlug} does not support API key authentication`,
+      );
     }
 
     const existingCredential = await this.prisma.credential.findUnique({
       where: { userId_appId: { userId, appId: app.id } },
     });
     if (existingCredential) {
-      throw new Error(`You already have a credential for ${app.name}`);
+      throw ApiException.conflict(
+        `You already have a credential for ${app.name}`,
+      );
     }
 
     const credentialsData = { apiKey, name: name || `${app.name} API Key` };
@@ -155,7 +160,7 @@ export class CredentialsService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     if (credential.n8nCredentialId) {
@@ -182,7 +187,7 @@ export class CredentialsService {
     });
 
     if (!credential) {
-      throw new Error('Credential not found');
+      throw ApiException.notFound('Credential');
     }
 
     if (credential.app.authType === 'oauth2') {
